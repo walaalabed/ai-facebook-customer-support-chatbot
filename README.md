@@ -72,17 +72,6 @@ Example of the chatbot responding to customer messages through Facebook Messenge
 - Appointment booking
 - Lead qualification
 
----
 
-## Future Improvements
-
-- Conversation memory
-- Human agent handoff
-- CRM integration
-- Multi-language support
-- Customer profile management
-- Order tracking integration
-
----
 
 
