@@ -1,0 +1,233 @@
+{
+  "name": "Facebook Messenger Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "1c3198f8-5a84-4a94-ae14-37ebdb125d79",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "41ccb43b-13a8-4099-8b48-8fffdf022aa2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        144
+      ],
+      "webhookId": "1c3198f8-5a84-4a94-ae14-37ebdb125d79"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d7907b65-fa65-48f7-84b4-5b758cfa1678",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "42779fa9-bf43-4e4a-80b8-abb3c2f5e71e",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "wl-fb-agent-chat",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "84b0fe80-2c57-4b1a-844b-deeca35c2fc0",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Webhook').item.json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "id": "756c5e92-4f8b-4a0a-832e-e6cc2bfbd6ab",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.entry[0].messaging[0].message.text }}",
+        "options": {
+          "systemMessage": "You are the AI assistant for Synapse Tech, an AI automation company.\n\nYour job is to chat naturally with visitors and help them understand our services.\n\nRules:\n- Keep replies short and conversational.\n- Reply as if you're texting a person on Messenger.\n- Use at most one emoji per message, and only when it feels natural.\n- Don't write long paragraphs.\n- If you need to explain something, split it into 2–4 short messages instead of one large message.\n- Be friendly, professional, and confident.\n- Never overwhelm the user with too much information.\n- Ask one question at a time to keep the conversation flowing.\n- If someone asks about our services, briefly explain that we build AI agents, workflow automation, chatbots, and business automation solutions.\n- If the user wants pricing or a custom solution, ask about their business and requirements before giving recommendations.\n- If you don't know something, be honest and offer to connect them with the Synapse Tech team.\n\nAlways sound like a helpful human, not a robot."
+        }
+      },
+      "id": "016a990e-5d2c-4985-aa77-007c7e4ba606",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "aff6fd93-3936-495a-a771-7ae57cdcfbf3",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "9SbBeaPgKx9UMOet",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.entry[0].messaging[0].sender.id }}",
+        "contextWindowLength": 50
+      },
+      "id": "3b5db16c-b063-4425-bead-0dbdf99c3500",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        368,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v25.0/{{ $('Webhook').item.json.body.entry[0].messaging[0].recipient.id }}/messages?access_token=EAAWi0Gd4vlsBSGV34hjFIElRlW15Oj7jtdxGLPQZAE6oDlpQ2Ap5fOxD0YzFO1zeriaW5SzMeJzfZApGvekZBrbZCOGOaUnjSR7CowdmZAKCZAlmqBHY396EW5MgwWFHx7kbSAABedo706oD4sY5AdkQhWobweQKRzuFqHJBMMVvhGFXdypAhqMicWgRXyCrv1VK8E8QZDZD",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($json.output) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "eaaebc05-8284-454d-8f7b-54b508ff81e2",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "87f61693-694d-4ebe-9691-7e0695154577",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48d0cdcb551df98babdf5fc04955b915c9b23b66c3e16850a8c5e10bfd80942d"
+  },
+  "nodeGroups": [],
+  "id": "CGdGY83Ue8piVT7H",
+  "tags": []
+}
